@@ -1,0 +1,10 @@
+{
+  "name": "rondaflow",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "dev:web": "corepack pnpm --filter @rondaflow/web dev",
+    "build": "corepack pnpm -r build"
+  }
+}
