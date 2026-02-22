@@ -1,0 +1,12 @@
+services:
+  rondaflow-web:
+    container_name: rondaflow-web
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    ports:
+      - "3000:3000"
+
