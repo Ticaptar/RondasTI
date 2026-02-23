@@ -52,7 +52,8 @@ function extensionByMime(mimeType: string) {
 }
 
 export function parseDataUrlImage(dataUrl: string) {
-  const match = /^data:([^;]+);base64,(.+)$/s.exec(dataUrl.trim());
+  // Compatível com targets antigos (sem flag dotAll /s)
+  const match = /^data:([^;]+);base64,([\s\S]+)$/.exec(dataUrl.trim());
   if (!match) {
     throw new Error("Formato de imagem invalido (data URL).");
   }
