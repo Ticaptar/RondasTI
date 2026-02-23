@@ -6,9 +6,17 @@ import { formatDateTime } from "@/lib/format";
 
 type DraftItem = ChecklistModeloItemInput & { id: string };
 
+function genDraftId() {
+  const c = globalThis.crypto as Crypto | undefined;
+  if (c && typeof c.randomUUID === "function") {
+    return c.randomUUID();
+  }
+  return `draft_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function newDraftItem(ordem: number, setorId = ""): DraftItem {
   return {
-    id: crypto.randomUUID(),
+    id: genDraftId(),
     setorId,
     titulo: "",
     descricao: "",
