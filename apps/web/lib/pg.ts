@@ -29,7 +29,10 @@ export function getPgPool() {
   return globalThis.__RONDAFLOW_PG_POOL__;
 }
 
-export async function query<T extends QueryResultRow = QueryResultRow>(text: string, values?: unknown[]) {
+export async function query<T extends QueryResultRow = QueryResultRow>(
+  text: string,
+  values?: unknown[]
+): Promise<DbResult<T>> {
   return getPgPool().query<T>(text, values);
 }
 
