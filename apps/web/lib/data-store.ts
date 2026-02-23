@@ -188,7 +188,7 @@ async function getSetoresPlanejadosByRonda(rondaId: string) {
     [rondaId]
   );
 
-  return res.rows.map((row) => ({
+  return res.rows.map((row: (typeof res.rows)[number]) => ({
     id: row.id,
     nome: row.nome,
     ordem: Number(row.ordem),
@@ -224,7 +224,7 @@ async function getFotosByRonda(rondaId: string) {
     [rondaId]
   );
 
-  const fotos = res.rows.map((row) => ({
+  const fotos = res.rows.map((row: (typeof res.rows)[number]) => ({
     id: row.id,
     rondaId: row.ronda_id,
     itemRespostaId: row.ronda_resposta_id ?? undefined,
@@ -279,7 +279,7 @@ async function getRespostasByRonda(rondaId: string): Promise<ItemResposta[]> {
     getFotosByRonda(rondaId)
   ]);
 
-  return respostasRes.rows.map((row) => ({
+  return respostasRes.rows.map((row: (typeof respostasRes.rows)[number]) => ({
     id: row.id,
     itemTemplateId: row.item_template_id,
     setorId: row.setor_id,
@@ -319,7 +319,7 @@ async function getLocalizacoesByRonda(rondaId: string): Promise<LocalizacaoPing[
     [rondaId]
   );
 
-  return res.rows.map((row) => ({
+  return res.rows.map((row: (typeof res.rows)[number]) => ({
     id: row.id,
     rondaId: row.ronda_id,
     latitude: Number(row.latitude),
@@ -387,7 +387,7 @@ export async function listAuditLogsByRonda(rondaId: string): Promise<AuditLog[]>
     [rondaId]
   );
 
-  return res.rows.map((row) => ({
+  return res.rows.map((row: (typeof res.rows)[number]) => ({
     id: row.id,
     rondaId: row.ronda_id ?? undefined,
     userId: row.usuario_id,
@@ -468,7 +468,7 @@ export async function listRondas(params?: { analistaId?: string }): Promise<Rond
   ]);
 
   const respostasMap = new Map(
-    respostasAgg.rows.map((row) => [
+    respostasAgg.rows.map((row: (typeof respostasAgg.rows)[number]) => [
       row.ronda_id,
       {
         totalItens: Number(row.total_itens),
@@ -478,10 +478,10 @@ export async function listRondas(params?: { analistaId?: string }): Promise<Rond
       }
     ])
   );
-  const fotosMap = new Map(fotosAgg.rows.map((row) => [row.ronda_id, Number(row.total_fotos)]));
-  const gpsMap = new Map(gpsAgg.rows.map((row) => [row.ronda_id, Number(row.total_pings)]));
+  const fotosMap = new Map(fotosAgg.rows.map((row: (typeof fotosAgg.rows)[number]) => [row.ronda_id, Number(row.total_fotos)]));
+  const gpsMap = new Map(gpsAgg.rows.map((row: (typeof gpsAgg.rows)[number]) => [row.ronda_id, Number(row.total_pings)]));
 
-  return rondasRes.rows.map((row) => {
+  return rondasRes.rows.map((row: (typeof rondasRes.rows)[number]) => {
     const stats = respostasMap.get(row.id) ?? { totalItens: 0, itensOk: 0, itensIncidente: 0, itensPendentes: 0 };
     const percentualConcluido =
       stats.totalItens === 0 ? 0 : Math.round(((stats.totalItens - stats.itensPendentes) / stats.totalItens) * 100);
@@ -556,7 +556,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
       totalPingsHoje: rondasHoje.reduce((acc, r) => acc + r.totalPingsLocalizacao, 0)
     },
     rondas,
-    auditoriaRecente: auditoriaRecente.rows.map((row) => ({
+    auditoriaRecente: auditoriaRecente.rows.map((row: (typeof auditoriaRecente.rows)[number]) => ({
       id: row.id,
       rondaId: row.ronda_id ?? undefined,
       userId: row.usuario_id,
@@ -1085,7 +1085,7 @@ export async function listUsersByRole(role: UserRole): Promise<User[]> {
     `,
     [role]
   );
-  return res.rows.map((row) => ({
+  return res.rows.map((row: (typeof res.rows)[number]) => ({
     id: row.id,
     nome: row.nome,
     username: row.username,
@@ -1102,7 +1102,7 @@ export async function listSetores(): Promise<ChecklistTemplate["setores"]> {
       order by ordem asc, nome asc
     `
   );
-  return res.rows.map((row) => ({
+  return res.rows.map((row: (typeof res.rows)[number]) => ({
     id: row.id,
     nome: row.nome,
     ordem: Number(row.ordem),
@@ -1185,7 +1185,7 @@ export async function listChecklistModelos(): Promise<ChecklistModeloResumo[]> {
       order by cm.nome asc, cm.versao desc
     `
   );
-  return res.rows.map((row) => ({
+  return res.rows.map((row: (typeof res.rows)[number]) => ({
     id: row.id,
     nome: row.nome,
     versao: Number(row.versao),
