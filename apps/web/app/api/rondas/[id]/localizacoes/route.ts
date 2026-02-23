@@ -10,7 +10,7 @@ async function getParamId(context: { params: Promise<{ id: string }> }) {
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const user = getSessionUserFromRequest(request);
-  if (!user) return NextResponse.json({ error: "Nao autenticado." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
   const body = (await request.json().catch(() => null)) as {
     latitude?: number;
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   } | null;
 
   if (typeof body?.latitude !== "number" || typeof body.longitude !== "number") {
-    return NextResponse.json({ error: "Latitude/longitude invalidas." }, { status: 400 });
+    return NextResponse.json({ error: "Latitude/longitude inválidas." }, { status: 400 });
   }
 
   const ping = await addLocalizacao({
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     origem: body.origem ?? "manual",
     userId: user.id
   });
-  if (!ping) return NextResponse.json({ error: "Ronda nao encontrada." }, { status: 404 });
+  if (!ping) return NextResponse.json({ error: "Ronda não encontrada." }, { status: 404 });
 
   return NextResponse.json({ ping });
 }

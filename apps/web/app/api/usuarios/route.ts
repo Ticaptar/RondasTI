@@ -6,11 +6,11 @@ import type { UserRole } from "@/lib/types";
 
 export async function GET(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
-  if (!user) return NextResponse.json({ error: "Nao autenticado." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
   const role = (request.nextUrl.searchParams.get("perfil") ?? "") as UserRole;
   if (role !== "analista" && role !== "gestor") {
-    return NextResponse.json({ error: "Perfil invalido." }, { status: 400 });
+    return NextResponse.json({ error: "Perfil inválido." }, { status: 400 });
   }
 
   if (user.role !== "gestor" && user.role !== role) {

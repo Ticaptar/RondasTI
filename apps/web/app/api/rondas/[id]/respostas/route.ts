@@ -11,7 +11,7 @@ async function getParamId(context: { params: Promise<{ id: string }> }) {
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const user = getSessionUserFromRequest(request);
-  if (!user) return NextResponse.json({ error: "Nao autenticado." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
   const body = (await request.json().catch(() => null)) as {
     itemRespostaId?: string;
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   } | null;
 
   if (!body?.itemRespostaId || (body.status !== "ok" && body.status !== "incidente" && body.status !== "pendente")) {
-    return NextResponse.json({ error: "Payload invalido." }, { status: 400 });
+    return NextResponse.json({ error: "Payload inválido." }, { status: 400 });
   }
 
   const rondaId = await getParamId(context);
@@ -31,6 +31,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     observacao: body.observacao,
     userId: user.id
   });
-  if (!ronda) return NextResponse.json({ error: "Ronda/item nao encontrado." }, { status: 404 });
+  if (!ronda) return NextResponse.json({ error: "Ronda/item não encontrado." }, { status: 404 });
   return NextResponse.json({ ronda });
 }

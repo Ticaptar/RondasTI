@@ -9,12 +9,12 @@ export async function POST(request: Request) {
   const username = body?.username ?? "";
 
   if (role !== "analista" && role !== "gestor") {
-    return NextResponse.json({ error: "Perfil invalido." }, { status: 400 });
+    return NextResponse.json({ error: "Perfil inválido." }, { status: 400 });
   }
 
   const session = await loginUser(username, role);
   if (!session) {
-    return NextResponse.json({ error: "Usuario nao encontrado para o perfil." }, { status: 404 });
+    return NextResponse.json({ error: "Usuário não encontrado para o perfil." }, { status: 404 });
   }
 
   const response = NextResponse.json({ user: session.user });

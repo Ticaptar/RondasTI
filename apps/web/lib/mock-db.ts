@@ -412,7 +412,7 @@ export function updateResposta(params: {
       userNome: user.nome,
       rondaId: ronda.id,
       acao: "item_observacao_atualizada",
-      detalhes: `Observacao registrada no item "${resposta.titulo}".`,
+      detalhes: `Observação registrada no item "${resposta.titulo}".`,
       criadoEm: nowIso(),
       metadata: { itemRespostaId: resposta.id }
     });
@@ -433,7 +433,7 @@ export function updateRondaObservacaoGeral(params: { rondaId: string; observacao
     userNome: user.nome,
     rondaId: ronda.id,
     acao: "item_observacao_atualizada",
-    detalhes: "Observacao geral da ronda atualizada.",
+    detalhes: "Observação geral da ronda atualizada.",
     criadoEm: nowIso()
   });
   return clone(ronda);
@@ -513,7 +513,7 @@ export function addLocalizacao(params: {
     userNome: user.nome,
     rondaId: ronda.id,
     acao: "localizacao_registrada",
-    detalhes: `Ponto de localizacao registrado (${params.origem}).`,
+    detalhes: `Ponto de localização registrado (${params.origem}).`,
     criadoEm: ping.coletadaEm,
     metadata: { lat: params.latitude, lng: params.longitude }
   });

@@ -10,7 +10,7 @@ declare global {
 function requireEnv(name: string) {
   const value = process.env[name];
   if (!value) {
-    throw new Error(`${name} nao configurada.`);
+    throw new Error(`${name} não configurada.`);
   }
   return value;
 }
@@ -55,11 +55,11 @@ export function parseDataUrlImage(dataUrl: string) {
   // Compatível com targets antigos (sem flag dotAll /s)
   const match = /^data:([^;]+);base64,([\s\S]+)$/.exec(dataUrl.trim());
   if (!match) {
-    throw new Error("Formato de imagem invalido (data URL).");
+    throw new Error("Formato de imagem inválido (data URL).");
   }
   const mimeType = match[1].toLowerCase();
   if (!mimeType.startsWith("image/")) {
-    throw new Error("Arquivo enviado nao e imagem.");
+    throw new Error("Arquivo enviado não é imagem.");
   }
   const bytes = Buffer.from(match[2], "base64");
   if (!bytes.length) {

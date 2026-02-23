@@ -10,7 +10,7 @@ async function getParamId(context: { params: Promise<{ id: string }> }) {
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const user = getSessionUserFromRequest(request);
-  if (!user) return NextResponse.json({ error: "Nao autenticado." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
   const body = (await request.json().catch(() => null)) as {
     itemRespostaId?: string;
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   } | null;
 
   if (!body?.nomeArquivo || !body?.dataUrl || typeof body.dataUrl !== "string") {
-    return NextResponse.json({ error: "Foto invalida." }, { status: 400 });
+    return NextResponse.json({ error: "Foto inválida." }, { status: 400 });
   }
 
   const foto = await addFotoToRonda({

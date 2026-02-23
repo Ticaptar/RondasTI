@@ -50,11 +50,11 @@ function parseImageDataUrlForDb(dataUrl: string) {
   // Compatível com targets antigos (sem flag dotAll /s)
   const match = /^data:([^;]+);base64,([\s\S]+)$/.exec(dataUrl.trim());
   if (!match) {
-    throw new Error("Formato de imagem invalido (data URL).");
+    throw new Error("Formato de imagem inválido (data URL).");
   }
   const mimeType = match[1].toLowerCase();
   if (!mimeType.startsWith("image/")) {
-    throw new Error("Arquivo enviado nao e imagem.");
+    throw new Error("Arquivo enviado não é imagem.");
   }
   const bytes = Buffer.from(match[2], "base64");
   if (!bytes.length) {
@@ -423,7 +423,7 @@ export async function listRondas(params?: { analistaId?: string }): Promise<Rond
     [params?.analistaId ?? null]
   );
 
-  const rondaIds = rondasRes.rows.map((r) => r.id);
+  const rondaIds = rondasRes.rows.map((r: (typeof rondasRes.rows)[number]) => r.id);
   if (rondaIds.length === 0) return [];
 
   const [respostasAgg, fotosAgg, gpsAgg] = await Promise.all([
@@ -467,7 +467,14 @@ export async function listRondas(params?: { analistaId?: string }): Promise<Rond
     )
   ]);
 
-  const respostasMap = new Map(
+  type RondaStatsAgg = {
+    totalItens: number;
+    itensOk: number;
+    itensIncidente: number;
+    itensPendentes: number;
+  };
+
+  const respostasMap = new Map<string, RondaStatsAgg>(
     respostasAgg.rows.map((row: (typeof respostasAgg.rows)[number]) => [
       row.ronda_id,
       {
@@ -482,7 +489,8 @@ export async function listRondas(params?: { analistaId?: string }): Promise<Rond
   const gpsMap = new Map(gpsAgg.rows.map((row: (typeof gpsAgg.rows)[number]) => [row.ronda_id, Number(row.total_pings)]));
 
   return rondasRes.rows.map((row: (typeof rondasRes.rows)[number]) => {
-    const stats = respostasMap.get(row.id) ?? { totalItens: 0, itensOk: 0, itensIncidente: 0, itensPendentes: 0 };
+    const stats: RondaStatsAgg =
+      respostasMap.get(row.id) ?? { totalItens: 0, itensOk: 0, itensIncidente: 0, itensPendentes: 0 };
     const percentualConcluido =
       stats.totalItens === 0 ? 0 : Math.round(((stats.totalItens - stats.itensPendentes) / stats.totalItens) * 100);
 
@@ -534,13 +542,13 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
     )
   ]);
 
-  const rondasHoje = rondas.filter((r) => isTodayLocal(r.iniciadaEm));
-  const finalizadasHoje = rondasHoje.filter((r) => r.finalizadaEm);
+  const rondasHoje = rondas.filter((r: RondaResumo) => isTodayLocal(r.iniciadaEm));
+  const finalizadasHoje = rondasHoje.filter((r: RondaResumo) => r.finalizadaEm);
   const mediaDuracao =
     finalizadasHoje.length === 0
       ? 0
       : Math.round(
-          finalizadasHoje.reduce((acc, r) => {
+          finalizadasHoje.reduce((acc: number, r: RondaResumo) => {
             const ini = new Date(r.iniciadaEm).getTime();
             const fim = new Date(r.finalizadaEm as string).getTime();
             return acc + Math.max(0, (fim - ini) / 60000);
@@ -550,10 +558,10 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
   return {
     metricas: {
       rondasHoje: rondasHoje.length,
-      rondasAbertas: rondas.filter((r) => r.status === "aberta").length,
-      incidentesHoje: rondasHoje.reduce((acc, r) => acc + r.itensIncidente, 0),
+      rondasAbertas: rondas.filter((r: RondaResumo) => r.status === "aberta").length,
+      incidentesHoje: rondasHoje.reduce((acc: number, r: RondaResumo) => acc + r.itensIncidente, 0),
       mediaDuracaoMinutosRondasFinalizadasHoje: mediaDuracao,
-      totalPingsHoje: rondasHoje.reduce((acc, r) => acc + r.totalPingsLocalizacao, 0)
+      totalPingsHoje: rondasHoje.reduce((acc: number, r: RondaResumo) => acc + r.totalPingsLocalizacao, 0)
     },
     rondas,
     auditoriaRecente: auditoriaRecente.rows.map((row: (typeof auditoriaRecente.rows)[number]) => ({
@@ -791,7 +799,7 @@ export async function updateResposta(params: {
         rondaId: params.rondaId,
         userId: params.userId,
         acao: "item_observacao_atualizada",
-        detalhes: `Observacao registrada no item "${item.titulo}".`,
+        detalhes: `Observação registrada no item "${item.titulo}".`,
         metadata: { itemRespostaId: params.itemRespostaId }
       });
     }
@@ -824,7 +832,7 @@ export async function updateRondaObservacaoGeral(params: {
       rondaId: params.rondaId,
       userId: params.userId,
       acao: "item_observacao_atualizada",
-      detalhes: "Observacao geral da ronda atualizada."
+      detalhes: "Observação geral da ronda atualizada."
     });
     return true;
   });
@@ -865,7 +873,7 @@ export async function addLocalizacao(params: {
       rondaId: params.rondaId,
       userId: params.userId,
       acao: "localizacao_registrada",
-      detalhes: `Ponto de localizacao registrado (${params.origem}).`,
+      detalhes: `Ponto de localização registrado (${params.origem}).`,
       metadata: { lat: params.latitude, lng: params.longitude }
     });
 
@@ -1059,13 +1067,13 @@ export async function getTemplate(): Promise<ChecklistTemplate | null> {
     id: model.id,
     nome: model.nome,
     versao: Number(model.versao),
-    setores: setoresRes.rows.map((s) => ({
+    setores: setoresRes.rows.map((s: (typeof setoresRes.rows)[number]) => ({
       id: s.id,
       nome: s.nome,
       ordem: Number(s.ordem),
       checkpointHint: s.checkpoint_hint ?? ""
     })),
-    itens: itensRes.rows.map((i) => ({
+    itens: itensRes.rows.map((i: (typeof itensRes.rows)[number]) => ({
       id: i.id,
       setorId: i.setor_id,
       titulo: i.titulo,
@@ -1118,10 +1126,10 @@ export async function createSetor(params: {
 }) {
   const nome = params.nome.trim();
   if (!nome) {
-    throw new Error("Nome do setor obrigatorio.");
+    throw new Error("Nome do setor obrigatório.");
   }
   if (!Number.isFinite(params.ordem) || params.ordem <= 0) {
-    throw new Error("Ordem do setor invalida.");
+    throw new Error("Ordem do setor inválida.");
   }
 
   const res = await query<{
@@ -1211,7 +1219,7 @@ export async function createChecklistModelo(params: {
     .filter((item) => item.setorId && item.titulo && item.descricao);
 
   if (!nome || itens.length === 0) {
-    throw new Error("Modelo invalido: informe nome e pelo menos 1 item.");
+    throw new Error("Modelo inválido: informe nome e pelo menos 1 item.");
   }
 
   const modelId = await withTransaction(async (client) => {
@@ -1311,13 +1319,13 @@ export async function createChecklistModelo(params: {
     id: model.id,
     nome: model.nome,
     versao: Number(model.versao),
-    setores: setores.rows.map((s) => ({
+    setores: setores.rows.map((s: (typeof setores.rows)[number]) => ({
       id: s.id,
       nome: s.nome,
       ordem: Number(s.ordem),
       checkpointHint: s.checkpoint_hint ?? ""
     })),
-    itens: itensRaw.rows.map((i) => ({
+    itens: itensRaw.rows.map((i: (typeof itensRaw.rows)[number]) => ({
       id: i.id,
       setorId: i.setor_id,
       titulo: i.titulo,
@@ -1358,7 +1366,7 @@ export async function loginUser(username: string, role: UserRole) {
       detalhes: `Login realizado no perfil ${sessionUser.role}.`
     });
   } catch {
-    // login nao deve falhar por audit log
+    // login não deve falhar por audit log
   }
 
   return { token, user: sessionUser };

@@ -30,7 +30,7 @@ export function useSessionGuard(role?: UserRole) {
       })
       .catch(() => {
         if (cancelled) return;
-        setError("Sessao nao encontrada.");
+        setError("Sessão não encontrada.");
         router.replace("/login");
       })
       .finally(() => {

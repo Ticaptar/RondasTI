@@ -5,7 +5,7 @@ import { createSetor, listSetores } from "@/lib/data-store";
 
 export async function GET(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
-  if (!user) return NextResponse.json({ error: "Nao autenticado." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
   const setores = await listSetores();
   return NextResponse.json({ setores });
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const user = getSessionUserFromRequest(request);
-  if (!user) return NextResponse.json({ error: "Nao autenticado." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   if (user.role !== "gestor") return NextResponse.json({ error: "Acesso restrito ao gestor." }, { status: 403 });
 
   const body = (await request.json().catch(() => null)) as {
