@@ -38,6 +38,13 @@ export interface ChecklistModeloResumo {
   totalItens: number;
   totalSetores: number;
   criadoEm?: string;
+  itens?: {
+    id: string;
+    titulo: string;
+    setorId: string;
+    setorNome: string;
+    ordem: number;
+  }[];
 }
 
 export interface ChecklistModeloItemInput {

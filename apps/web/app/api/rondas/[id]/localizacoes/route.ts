@@ -8,6 +8,8 @@ async function getParamId(context: { params: Promise<{ id: string }> }) {
   return params.id;
 }
 
+const ENABLE_SIMULATED_GPS = process.env.NEXT_PUBLIC_ENABLE_GPS_TEST === "true";
+
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const user = getSessionUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
@@ -21,6 +23,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
 
   if (typeof body?.latitude !== "number" || typeof body.longitude !== "number") {
     return NextResponse.json({ error: "Latitude/longitude inválidas." }, { status: 400 });
+  }
+
+  if (Math.abs(body.latitude) > 90 || Math.abs(body.longitude) > 180) {
+    return NextResponse.json({ error: "Coordenadas fora do intervalo valido." }, { status: 400 });
+  }
+
+  if (body.origem === "simulada" && !ENABLE_SIMULATED_GPS) {
+    return NextResponse.json({ error: "Ponto simulado desabilitado neste ambiente." }, { status: 403 });
   }
 
   const ping = await addLocalizacao({

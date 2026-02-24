@@ -90,7 +90,7 @@ export default function GestorPage() {
           </button>
           <input
             className="rf-input"
-            style={{ width: 280 }}
+            style={{ width: "min(100%, 320px)" }}
             placeholder="Filtrar por ID, analista ou status"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}

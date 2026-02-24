@@ -29,17 +29,20 @@ export default function LoginPage() {
     event.preventDefault();
     setLoading(true);
     setError(null);
+
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, role })
     });
+
     if (!res.ok) {
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
       setError(body?.error ?? "Falha no login.");
       setLoading(false);
       return;
     }
+
     router.replace(role === "gestor" ? "/gestor" : "/analista");
   }
 
@@ -47,38 +50,44 @@ export default function LoginPage() {
     <main className="rf-page">
       <AppTopbar user={null} />
 
-      <section className="rf-hero" style={{ maxWidth: 740, margin: "0 auto" }}>
-        <p className="rf-section-title">Acesso</p>
-        <h1 className="rf-title">Entrar no RondaFlow</h1>
-        <p className="rf-subtitle">Selecione o perfil e informe o usuário cadastrado no banco para acessar o sistema.</p>
+      <div className="rf-auth-stage">
+        <section className="rf-hero rf-auth-panel">
+          <p className="rf-section-title">Acesso</p>
+          <h1 className="rf-title">Entrar no RondaFlow</h1>
+          <p className="rf-subtitle">Informe seu usuario e selecione o perfil para entrar no sistema.</p>
 
-        <form onSubmit={submitLogin} className="rf-grid cols-2" style={{ marginTop: 18 }}>
-          <label className="rf-label">
-            Perfil
-            <select className="rf-select" value={role} onChange={(e) => setRole(e.target.value as UserRole)}>
-              <option value="analista">Analista TI</option>
-              <option value="gestor">Gestor</option>
-            </select>
-          </label>
-          <label className="rf-label">
-            Usuário
-            <input
-              className="rf-input"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Digite seu usuário"
-              autoComplete="username"
-            />
-          </label>
+          <form onSubmit={submitLogin} className="rf-grid rf-auth-form">
+            <label className="rf-label">
+              Perfil
+              <select className="rf-select" value={role} onChange={(e) => setRole(e.target.value as UserRole)}>
+                <option value="analista">Analista TI</option>
+                <option value="gestor">Gestor</option>
+              </select>
+            </label>
 
-          <div className="rf-row wrap" style={{ gridColumn: "1 / -1" }}>
-            <button className="rf-btn primary" type="submit" disabled={loading}>
-              {loading ? "Entrando..." : "Entrar"}
-            </button>
+            <label className="rf-label">
+              Usuario
+              <input
+                className="rf-input"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Digite seu usuario"
+                autoComplete="username"
+                autoFocus
+              />
+            </label>
+
+            <div className="rf-actions rf-auth-actions">
+              <button className="rf-btn primary" type="submit" disabled={loading}>
+                {loading ? "Entrando..." : "Entrar"}
+              </button>
+            </div>
+
+            <span className="rf-muted rf-auth-note">Login interno</span>
             {error && <span className="rf-chip incidente">{error}</span>}
-          </div>
-        </form>
-      </section>
+          </form>
+        </section>
+      </div>
     </main>
   );
 }

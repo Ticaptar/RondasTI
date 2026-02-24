@@ -19,9 +19,7 @@ export function AppTopbar({ user }: { user: SessionUser | null }) {
         <span className="rf-brand-dot" />
         <div>
           <h2>RondaFlow</h2>
-          <small>
-            {user ? `${user.nome} (${user.role})` : "Checklist auditado de ronda TI"}
-          </small>
+          <small>{user ? `${user.nome} (${user.role})` : "Checklist auditado de ronda TI"}</small>
         </div>
       </div>
       <div className="rf-actions">

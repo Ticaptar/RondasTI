@@ -1191,9 +1191,9 @@ export async function listChecklistModelos(): Promise<ChecklistModeloResumo[]> {
       left join checklist_modelo_itens cmi on cmi.checklist_modelo_id = cm.id
       group by cm.id, cm.nome, cm.versao, cm.ativo, cm.criado_em
       order by cm.nome asc, cm.versao desc
-    `
-  );
-  return res.rows.map((row: (typeof res.rows)[number]) => ({
+      `
+    );
+  const base = res.rows.map((row: (typeof res.rows)[number]) => ({
     id: row.id,
     nome: row.nome,
     versao: Number(row.versao),
@@ -1201,6 +1201,54 @@ export async function listChecklistModelos(): Promise<ChecklistModeloResumo[]> {
     totalItens: Number(row.total_itens),
     totalSetores: Number(row.total_setores),
     criadoEm: row.criado_em
+  }));
+
+  if (base.length === 0) return base;
+
+  const itensRes = await query<{
+    id: string;
+    checklist_modelo_id: string;
+    titulo: string;
+    setor_id: string;
+    setor_nome: string;
+    ordem: number;
+  }>(
+    `
+      select
+        cmi.id::text as id,
+        cmi.checklist_modelo_id::text as checklist_modelo_id,
+        cmi.titulo,
+        cmi.setor_id::text as setor_id,
+        s.nome as setor_nome,
+        cmi.ordem
+      from checklist_modelo_itens cmi
+      join setores s on s.id = cmi.setor_id
+      where cmi.checklist_modelo_id = any($1::uuid[])
+      order by cmi.checklist_modelo_id, cmi.ordem asc, cmi.titulo asc
+    `,
+    [base.map((m) => m.id)]
+  );
+
+  const itensPorModelo = new Map<
+    string,
+    NonNullable<ChecklistModeloResumo["itens"]>
+  >();
+
+  for (const row of itensRes.rows) {
+    const atual = itensPorModelo.get(row.checklist_modelo_id) ?? [];
+    atual.push({
+      id: row.id,
+      titulo: row.titulo,
+      setorId: row.setor_id,
+      setorNome: row.setor_nome,
+      ordem: Number(row.ordem)
+    });
+    itensPorModelo.set(row.checklist_modelo_id, atual);
+  }
+
+  return base.map((modelo) => ({
+    ...modelo,
+    itens: itensPorModelo.get(modelo.id) ?? []
   }));
 }
 

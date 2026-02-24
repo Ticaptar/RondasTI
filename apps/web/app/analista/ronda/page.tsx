@@ -13,6 +13,11 @@ import type { AuditLog, ItemResposta, Ronda } from "@/lib/types";
 
 type DetailResponse = { ronda: Ronda; auditLogs: AuditLog[] };
 
+const ENABLE_SIMULATED_GPS = process.env.NEXT_PUBLIC_ENABLE_GPS_TEST === "true";
+const MIN_GPS_INTERVAL_MS = 15000;
+const MIN_GPS_MOVE_METERS = 12;
+const MAX_GPS_ACCURACY_METERS = 80;
+
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -20,6 +25,19 @@ async function fileToDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
   });
+}
+
+function distanceMeters(aLat: number, aLng: number, bLat: number, bLng: number) {
+  const toRad = (n: number) => (n * Math.PI) / 180;
+  const r = 6371000;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const lat1 = toRad(aLat);
+  const lat2 = toRad(bLat);
+  const x =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return 2 * r * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
 function AnalistaRondaContent() {
@@ -41,6 +59,7 @@ function AnalistaRondaContent() {
 
   const geoLastSentRef = useRef(0);
   const geoInFlightRef = useRef(false);
+  const geoLastCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
 
   async function loadDetail(showLoading = true) {
     if (!rondaId) return;
@@ -68,7 +87,7 @@ function AnalistaRondaContent() {
     loadDetail().catch(() => setError("Falha ao carregar ronda."));
   }, [rondaId, user, router]);
 
-  async function postLocation(lat: number, lng: number, acc: number | null, origem: "gps" | "simulada") {
+  async function postLocation(lat: number, lng: number, acc: number | null, origem: "gps" | "manual" | "simulada") {
     if (!rondaId || detail?.ronda.status !== "aberta" || geoInFlightRef.current) return;
     geoInFlightRef.current = true;
     try {
@@ -77,18 +96,51 @@ function AnalistaRondaContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ latitude: lat, longitude: lng, precisaoMetros: acc, origem })
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? "Falha ao registrar localizacao");
+      }
       setGeoStatus(`Localização registrada (${origem})`);
       await loadDetail(false);
-    } catch {
+    } catch (err) {
       setGeoStatus("Falha ao registrar localização");
     } finally {
       geoInFlightRef.current = false;
     }
   }
 
+  async function addManualPoint() {
+    if (!("geolocation" in navigator)) {
+      setGeoStatus("Navegador sem geolocalizacao");
+      return;
+    }
+
+    setGeoStatus("Capturando ponto atual...");
+    await new Promise<void>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          geoLastSentRef.current = Date.now();
+          geoLastCoordsRef.current = { lat, lng };
+          postLocation(lat, lng, pos.coords.accuracy ?? null, "manual")
+            .catch(() => undefined)
+            .finally(resolve);
+        },
+        (e) => {
+          setGeoStatus(`GPS indisponivel: ${e.message}`);
+          resolve();
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+      );
+    });
+  }
+
   useEffect(() => {
     if (!gpsEnabled || !detail?.ronda || detail.ronda.status !== "aberta") return;
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      setGeoStatus("GPS pode falhar sem HTTPS");
+    }
     if (!("geolocation" in navigator)) {
       setGeoStatus("Navegador sem geolocalização");
       return;
@@ -97,12 +149,24 @@ function AnalistaRondaContent() {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const now = Date.now();
-        if (now - geoLastSentRef.current < 15000) return;
+        const acc = pos.coords.accuracy ?? null;
+        if (typeof acc === "number" && acc > MAX_GPS_ACCURACY_METERS) {
+          setGeoStatus(`GPS com baixa precisao (${Math.round(acc)}m)`);
+          return;
+        }
+        const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        if (now - geoLastSentRef.current < MIN_GPS_INTERVAL_MS) return;
+        if (geoLastCoordsRef.current) {
+          const moved = distanceMeters(geoLastCoordsRef.current.lat, geoLastCoordsRef.current.lng, next.lat, next.lng);
+          if (moved < MIN_GPS_MOVE_METERS) {
+            setGeoStatus(`GPS parado (${Math.round(moved)}m)`);
+            return;
+          }
+        }
         geoLastSentRef.current = now;
+        geoLastCoordsRef.current = next;
         setGeoStatus("GPS monitorando...");
-        postLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy ?? null, "gps").catch(
-          () => undefined
-        );
+        postLocation(next.lat, next.lng, acc, "gps").catch(() => undefined);
       },
       (e) => setGeoStatus(`GPS indisponível: ${e.message}`),
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
@@ -197,9 +261,14 @@ function AnalistaRondaContent() {
         <button className={`rf-btn ${gpsEnabled ? "warn" : ""}`} onClick={() => setGpsEnabled((v) => !v)}>
           {gpsEnabled ? "Pausar GPS" : "Ativar GPS"}
         </button>
-        <button className="rf-btn" onClick={() => addSimulatedPoint().catch(() => setError("Falha ao gerar ponto."))}>
-          Registrar ponto simulado
+        <button className="rf-btn" onClick={() => addManualPoint().catch(() => setError("Falha ao capturar ponto."))}>
+          Registrar ponto agora
         </button>
+        {ENABLE_SIMULATED_GPS && (
+          <button className="rf-btn" onClick={() => addSimulatedPoint().catch(() => setError("Falha ao gerar ponto."))}>
+            Ponto de teste (simulado)
+          </button>
+        )}
         <span className="rf-chip">{geoStatus}</span>
         {error && <span className="rf-chip incidente">{error}</span>}
       </div>
